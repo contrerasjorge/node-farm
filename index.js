@@ -2,6 +2,8 @@ const fs = require('fs');
 const http = require('http');
 const url = require('url');
 
+const slugify = require('slugify');
+
 const replaceTemplate = require('./modules/replaceTemplate');
 
 const tempOverview = fs.readFileSync(
@@ -20,6 +22,10 @@ const tempProduct = fs.readFileSync(
 const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
 const dataObj = JSON.parse(data);
 
+dataObj.forEach(
+  (el, i, arr) => (arr[i].slug = slugify(el.productName, { lower: true }))
+);
+
 const server = http.createServer((req, res) => {
   const { query, pathname } = url.parse(req.url, true);
 
@@ -33,9 +39,9 @@ const server = http.createServer((req, res) => {
     res.end(output);
 
     // Prdocut Page
-  } else if (pathname === '/product') {
+  } else if (pathname.startsWith('/product')) {
     res.writeHead(200, { 'Content-type': 'text/html' });
-    const product = dataObj[query.id];
+    const product = dataObj.find(el => el.slug === pathname.split('/')[2]);
     const output = replaceTemplate(tempProduct, product);
 
     res.end(output);
